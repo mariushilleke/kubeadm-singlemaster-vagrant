@@ -40,8 +40,6 @@ Vagrant.configure("2") do |config|
                 vbox.linked_clone = true
             end
 
-
-
             box.vm.provision "shell", env: {"SUBNET" => "#{SUBNET}", "IP" => "#{net}" }, inline: <<-SHELL
                 #set -x
 
@@ -69,8 +67,9 @@ Vagrant.configure("2") do |config|
                         kubeadm init \
                                 --config /tmp/kubeadm-config.yaml \
                                 --upload-certs \
+                                --ignore-preflight-errors=NumCPU \
                             | tee /vagrant/params/kubeadm.log
-							
+						# tee does not create the mentioned path respectively file, todo
                         # copy files to vagrant user
                         mkdir -p ~vagrant/.kube
                         cp -Rf /etc/kubernetes/admin.conf ~vagrant/.kube/config
@@ -96,9 +95,8 @@ Vagrant.configure("2") do |config|
                         TOKEN=`cat /vagrant/params/token`
                         DISCOVERY_TOKEN_CA_CERT_HASH=`cat /vagrant/params/discovery-token-ca-cert-hash`
                         kubeadm join m01.local:6443 \
-                                --apiserver-advertise-address $(/sbin/ip -o -4 addr list eth1 | awk '{print $4}' | cut -d/ -f1) \
-                                --token ${TOKEN} \
-                                --discovery-token-ca-cert-hash sha256:${DISCOVERY_TOKEN_CA_CERT_HASH}
+                        --token ${TOKEN} \
+                        --discovery-token-ca-cert-hash sha256:${DISCOVERY_TOKEN_CA_CERT_HASH}
 		                ;;
                 esac
             SHELL
